@@ -14,7 +14,8 @@ A flexible and easy tool for serving and scaling PyTorch models in production �
 
 <br>
 
-<details><summary>⚡ Why TorchServe</summary>
+### ⚡ Why TorchServe 
+<details><summary></summary>
 <p>
   
 * [Model Management API](docs/management_api.md): multi model management with optimized worker to model allocation
@@ -34,7 +35,8 @@ A flexible and easy tool for serving and scaling PyTorch models in production �
  </p>
 </details>
 
-<details><summary> 🚀 Quick start with TorchServe </summary>
+### 🚀 Quick start with TorchServe
+<details><summary></summary>
 <p>
 
 #### 1. Clone TorchServe repository
@@ -120,6 +122,75 @@ torchserve --stop
   </p>
   </details>
   
+### :crystal_ball: Deploy Custom Model
+<details><summary></summary>
+<p>
+
+ #### 1. Save weigths from model
+ 
+ Save the model in as an executable script module or a traced script:
+
+1. Save model using scripting
+   ```python
+   #scripted mode
+   import torch
+   model = MyModel()
+   sm = torch.jit.script(model)
+   sm.save("my_model.pt")
+   ```
+
+2. Save model using tracing
+   ```python
+   #traced mode
+   import torch
+   model = MyModel()
+   model.eval()
+   example_input = torch.rand(1, 3, 224, 224)
+   traced_script_module = torch.jit.trace(model, example_input)
+   traced_script_module.save("my_model.pt")
+
+ #### 2. Create custom handler
+  
+ Handler can be TorchServe's inbuilt handler name or path to a py file to handle custom TorchServe inference logic. TorchServe supports the following handlers out of box:
+1. `image_classifier`
+2. `object_detector`
+3. `text_classifier`
+4. `image_segmenter`
+
+For a more comprehensive list of built in handlers, make sure to checkout the [examples](https://github.com/pytorch/serve/blob/master/docs/default_handlers.md)
+  
+Almost you can build your custom handler, for example checkout this [handler] for a plant count model.
+ 
+#### 3. Package your model into .mar file
+
+With the model artifacts available locally, you can use the `torch-model-archiver` CLI to generate a `.mar` file that can be used to serve an inference API with TorchServe.
+
+In this next step we'll run `torch-model-archiver` and tell it our model's name is `plant_count` and its version is `1.0` with the `model-name` and `version` parameter respectively and that it will use a custom handler with the `handler` argument . Then we're giving it the `model-file` and `serialized-file` to the model's assets.
+
+For torchscript:
+```bash
+torch-model-archiver --model-name plant_count --version 1.0 --serialized-file plantcount.pt --extra-files PlantCountHandler.py --handler my_handler.py --export-path model-store/
+```
+  
+This will package all the model artifacts files and output `plant_count.mar` in the export path working directory. This `.mar` file is all you need to run TorchServe, serving inference requests for a simple image recognition API.
+
+#### 4. Run model with torchserve
+  
+After you archive and store the model, use the torchserve command to serve the model.
+```
+torchserve --start --ncs --model-store model_store --models plant_count.mar --no-config-snapshots
+```
+
+#### 5. Get prediction
+Call the prediction endpoint
+```
+curl http://127.0.0.1:8080/predictions/plant_count -T ETL-DEEP-XXX.jpg
+```
+
+All this steps are for the torchscript mode model, for deploy eager mode model follow this [steps](https://github.com/pytorch/serve/tree/master/examples#creating-mar-file-for-eager-mode-model)
+
+</p>
+</details>
 
 
 
