@@ -192,5 +192,43 @@ All this steps are for the torchscript mode model, for deploy eager mode model f
 </p>
 </details>
 
+### :whale2: Docker build
+<details><summary></summary>
+<p>
+
+#### 1. Create torchserve docker image
+You can create the image from [torchserve](https://github.com/pytorch/serve/blob/master/docker/README.md#create-torchserve-docker-image), or do a pull:
+```
+docker pull pytorch/torchserve:version
+```
+#### 2. Create dockerfile
+From the directory of your model artifacts run:
+```bash
+cat > Dockerfile <<END
+FROM pytorch/torchserve:lastest-cpu
+
+COPY plantcount.mar /home/model-server/model-store/
+
+USER model-server
+RUN pip install scikit-image
+
+CMD ["torchserve", \
+     "--start", \
+     "--model-store=/home/model-server/model-store/", \
+     "--models=plantcount.mar", \
+     "--no-config-snapshots"]
+END
+```
+#### 3. Buil image
+```
+docker build . 
+```
+#### 4. Run
+```
+docker run --rm -it -p 8080:8080 --name plantcount_model id_image
+```
+  
+</p>
+</details>
 
 
